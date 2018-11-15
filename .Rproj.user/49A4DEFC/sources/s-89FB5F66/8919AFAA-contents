@@ -1,0 +1,106 @@
+---
+title: "Data Retrivial"
+author: "Mattia Podio"
+date: "14 novembre 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# import libraries here
+library(RCurl)
+```
+
+
+# The seed genes 
+
+The list of seeds genes contains rheumatoid arthritis-related human-oral microbiome proteins.
+
+They are stored in a file *geneList.txt*
+
+```{r}
+geneList = scan(file = "geneList.txt", what = "list")
+```
+
+
+For all genes in the seed gene list, collect and store the following basic information:
+
+- official gene symbol (check if the symbols are updated and approved on the HGNC
+website; report any issue/lack of data/potential misinterpretation)
+ Uniprot AC, ‘accession number’ (a.k.a. ’Uniprot entry’)
+- protein name (the main one only, do not report the aliases)
+- Entrez Gene ID (a.k.a. ‘GeneID’)
+- very brief description of its function (keep it very short, i.e. max 20 words)
+- notes related to the above information, if any and if relevant
+
+This is an example of syntax to be used when performing queries to uniprot
+
+https://www.uniprot.org/uniprot/?query=gene_exact:BRIP1+AND+reviewed:yes+AND+organism:%22Homo%20sapiens%20(Human)%20[9606]%22&columns=id,database(GeneID),comment(FUNCTION),protein%20names&format=tab
+
+*query*
+Each of the following filters are applied using the AND operator
+- gene_exact: lists all entries for proteins encoded by gene HPSE, but excluding variations like HPSE2 or HPSE_0
+- organism: (e.g. Homo Sapiens [9606])
+- reviewed: lists just rewied entries (SwissProt DB)
+
+*columns*
+what follows is a comma separated set of informations we want to retrieve
+- id: stands for Entry (Uniprot AC)
+- database(GeneID): GeneID (Entrez Gene)
+- comment(FUNCTION): description (function)
+- protein name
+
+*format*
+one of the possible formats (html | tab | xls | fasta | gff | txt | xml | rdf | list | rss)
+
+```{r}
+queryBuilder <- function(OffGeneSymbol = "BECN1"){
+  return(paste("https://uniprot.org/uniprot/?query=gene_exact:",OffGeneSymbol,"+AND+reviewed:yes+AND+organism:%22Homo%20sapiens%20(Human)%20[9606]%22&columns=id,database(GeneID),comment(FUNCTION),protein%20names&format=tab", sep = ""))
+}
+```
+
+
+
+```{r}
+createTable <- function(i) {
+    out <- tryCatch(
+        {
+            message(paste("Trying to download info for ..gene", i))
+            
+            query = queryBuilder(OffGeneSymbol = i)
+            # collect data relative to gene i in a table
+            table = read.table(file = query, sep = '\t', header = T)
+            # Protein names... keep only the first name (using the fact it comes before any parenthesis)
+            table$Protein.names = str_extract(table$Protein.names, regex("^[^(]+ ")) 
+            # Function remove text within parenthesis and the incipit "FUNCTION:"
+            table$Function..CC. = gsub("(\\(.([^\\)])*\\))|(FUNCTION:)", "", table$Function..CC.)
+            table$Cross.reference..GeneID. = gsub(";", "", table$Cross.reference..GeneID.)
+            table = cbind(OffGeneSymbol = i, table)
+            colnames(table) = c("OfficialGeneSymbol", "UniProtAC", "EntrezGene", "Description", "ProteinName")
+            message("OK")
+            return(table)
+            
+        },
+        error=function(cond) NULL,
+        
+         warning=function(cond) NULL,
+        
+        finally={
+    
+        }
+    )    
+    print(out)
+    return(out)
+}
+```
+
+
+```{r}
+table =  do.call("rbind", lapply(geneList, createTable))
+table
+```
+
+

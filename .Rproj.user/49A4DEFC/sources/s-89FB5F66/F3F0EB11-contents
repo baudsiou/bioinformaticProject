@@ -1,0 +1,124 @@
+---
+title: "Bioconductor Intro"
+author: "Mattia Podio"
+date: "27 ottobre 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = T)
+knitr::knit_hooks$set(timeit = local({
+  now = NULL
+  function(before, options) {
+    if (before) {
+      now <<- Sys.time()
+    } else {
+      res = difftime(Sys.time(), now)
+      now <<- NULL
+      # use options$label if you want the chunk label as well
+      paste('Time for this code chunk:', as.character(res))
+    }
+  }})
+)
+```
+
+This markdown file contains some experiments with the *Bioconductor* package.
+
+Many of the instructions are taken by the documentation:
+
+`https://bioconductor.org/packages/release/bioc/html/UniProt.ws.html`
+
+First of all let's install the package
+
+```{r eval = F}
+## try http:// if https:// URLs are not supported
+source("https://bioconductor.org/biocLite.R")
+biocLite("UniProt.ws")
+```
+
+Then, let's see a vignette running this, and clicking on 'PDF'
+
+```{r eval = F}
+browseVignettes("UniProt.ws")
+```
+
+Import the library
+
+```{r message=FALSE}
+library(UniProt.ws)
+```
+
+By  default,  you  can  see  that the UniProt.ws object  is  set  to retrieve records from Homo sapiens.
+
+```{r Homo}
+up <- UniProt.ws(taxId = 9606)
+```
+
+We can look for other species (over 20 000 available!). It is recommended to make use of a pattern argument or an integer n, to limit the output
+
+```{r}
+availableUniprotSpecies(n = 100)
+```
+
+Let's take the mouse
+
+```{r eval=F}
+mouseUp <- UniProt.ws(10090)
+mouseUp
+print(species(mouseUp))
+print(taxId(mouseUp))
+```
+
+Take Adeno-associated virus 2
+
+```{r}
+up <- UniProt.ws(taxId = 10804)
+```
+
+Now we can make use of the standard set of methods in a `select` interface.
+
+There is a large number of columns that can be retrieved. Specifically, they are 128 for Adeno-associated virus 2! )
+
+```{r}
+head(columns(up))
+cat(paste("\n.. There are",length(columns(up)), "columns"))
+```
+
+.. some of them can be also used as keytypes
+
+```{r}
+head(keytypes(up), n = 25)
+cat(paste("\n.. There are",length(keytypes(up)), "keytypes"))
+```
+
+If necessary you can also look up the keys of a given type. This is quite slow, so it's better to save the result in the R session
+
+```{r}
+egs = keys(up, "ENTREZ_GENE")
+print(egs)
+```
+
+Now, it seems that, for Adeno-associated virus 2 there is just one key, but try with human's
+
+```{r human keys, timeit = TRUE}
+egsHuman = keys(UniProt.ws(), "ENTREZ_GENE")
+print(head(egsHuman))
+cat(paste("There are", length((egsHuman)), "keys for Human"))
+```
+
+# Biogrid
+
+https://github.com/npjc/biogridr
+
+```{r, eval = F}
+# install.packages("devtools")
+devtools::install_github("npjc/biogridr")
+library(biogridr)
+```
+
+Create the key to interact with BioGrid
+
+```{r}
+bg_get_key(first = "Podio", last = "Mattia", email = "mattiapdo@gmail.com", project = "First Project with BioGrid")
+```
+

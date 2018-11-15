@@ -1,0 +1,14 @@
+func = "Plays a central role in autophagy (PubMed:23184933, PubMed:28445460). Acts as core subunit of the PI3K complex that mediates formation of phosphatidylinositol 3-phosphate; different complex forms are believed to play a role in multiple membrane trafficking pathways: PI3KC3-C1 is involved in initiation of autophagosomes and PI3KC3-C2 in maturation of autophagosomes and endocytosis. Involved in regulation of degradative endocytic trafficking and required for the abcission step in cytokinesis, probably in the context of PI3KC3-C2 (PubMed:20643123, PubMed:20208530, PubMed:26783301). Essential for the formation of PI3KC3-C2 but not PI3KC3-C1 PI3K complex forms. Involved in endocytosis (PubMed:25275521). Protects against infection by a neurovirulent strain of Sindbis virus (PubMed:9765397). May play a role in antiviral host defense."
+protNames = "Beclin-1 (Coiled-coil myosin-like BCL2-interacting protein) (Protein GT197) [Cleaved into: Beclin-1-C 35 kDa; Beclin-1-C 37 kDa]"
+
+str_extract(protNames, regex("^[^(]+ "))
+
+
+idiot = function(x) return(x[[1]])
+
+lapply(table$Cross.reference..GeneID., idiot)
+
+
+[^(FUNCTION)]
+
+gsub("(\\(.([^\\)])*\\))", "", func)

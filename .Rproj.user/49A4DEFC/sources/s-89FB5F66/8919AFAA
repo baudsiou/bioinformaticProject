@@ -1,0 +1,24 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1542211789004.000,
+    "dirty" : true,
+    "encoding" : "UTF-8",
+    "folds" : "11|6|14|0|\n69|9|85|8|\n90|17|92|8|\n",
+    "hash" : "0",
+    "id" : "8919AFAA",
+    "lastKnownWriteTime" : 1542282049,
+    "last_content_update" : 1542298806660,
+    "path" : "C:/Users/Mattia/Data_Science/BioInformatics/Project/Markdown.Rmd",
+    "project_path" : "Markdown.Rmd",
+    "properties" : {
+        "cursorPosition" : "64,0",
+        "last_setup_crc32" : "89FB5F66bb338d19",
+        "scrollLine" : "55",
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}

@@ -1,0 +1,94 @@
+---
+title: "Data Retrivial"
+author: "Mattia Podio"
+date: "14 novembre 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# import libraries here
+library(RCurl)
+```
+
+
+# The seed genes 
+
+The list of seeds genes contains rheumatoid arthritis-related human-oral microbiome proteins.
+
+They are stored in a file *geneList.txt*
+
+```{r}
+geneList = scan(file = "geneList.txt", what = "list")
+```
+
+
+For all genes in the seed gene list, collect and store the following basic information:
+
+1) official gene symbol (check if the symbols are updated and approved on the HGNC
+website; report any issue/lack of data/potential misinterpretation)
+- Uniprot AC, ‘accession number’ (a.k.a. ’Uniprot entry’)
+- protein name (the main one only, do not report the aliases)
+- Entrez Gene ID (a.k.a. ‘GeneID’)
+- very brief description of its function (keep it very short, i.e. max 20 words)
+- notes related to the above information, if any and if relevant
+
+## 1) Check official gene symbol
+
+<https://www.genenames.org/tools/multi-symbol-checker/>
+
+The checking output are retrieved as afile called *hgnc-symbol-check.csv*
+
+```{r}
+symbolCheck = read.csv("hgnc-symbol-check.csv", header = T)[,1:5]
+print(head(symbolCheck))
+barplot(table(symbolCheck$Match.type), col = c("cyan", "coral"), border = F, axes = F, main = "Proportion by Match Type")
+```
+
+We found that all the genes in our list are actually approved symbols, except for one gene. Let's replace the name of that gene in the seed list
+
+```{r}
+geneList = symbolCheck$Approved.symbol
+geneList
+```
+
+
+## How to build a query in Uniprot for programmatic access
+
+https://www.uniprot.org/uniprot/?query=gene_exact:BRIP1+AND+reviewed:yes+AND+organism:%22Homo%20sapiens%20(Human)%20[9606]%22&columns=id,database(GeneID),comment(FUNCTION),protein%20names&format=tab
+
+```{r}
+table <- read.table(file='https://www.uniprot.org/uniprot/?query=gene_exact:BRIP1+AND+reviewed:yes+AND+organism:%22Homo%20sapiens%20(Human)%20[9606]%22&columns=id,database(GeneID),comment(FUNCTION),protein%20names&format=tab', sep = '\t', header = T)
+table$OffGeneSymbol = "BRIP1"
+
+table <- table[c(colnames(table)[5],colnames(table)[1:4])]
+class(table)
+```
+
+```{r}
+queryBuilder <- function(OffGeneSymbol = "BRIP1"){
+  return(paste("https://uniprot.org/uniprot/?query=gene_exact:",OffGeneSymbol,"+AND+reviewed:yes+AND+organism:%22Homo%20sapiens%20(Human)%20[9606]%22&columns=id,database(GeneID),comment(FUNCTION),protein%20names&format=tab", sep = ""))
+}
+```
+
+```{r}
+bigtable = data.frame()
+#colnames(bigtable) = c('OfficialGeneSymbol', 'UniprotAC', "ProteinName", "EntrezGene", "Description")
+for(i in geneList){
+  # biuld the query for gene i
+  query = queryBuilder(OffGeneSymbol = i)
+  # collect data relative to gene i in a table
+  table = read.table(file = query, sep = '\t', header = T)
+  # add a column that refers to gene i
+  table$OffGeneSymbol = i
+  # swap columns
+  table <- table[c(colnames(table)[5],colnames(table)[1:4])]
+  
+  #colnames(table) = c('OfficialGeneSymbol', 'UniprotAC', "ProteinName", "EntrezGene", "Description")
+  #rbind.data.frame(bigtable, table)
+}
+```
+

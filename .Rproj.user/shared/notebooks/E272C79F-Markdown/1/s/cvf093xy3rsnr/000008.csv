@@ -1,0 +1,1 @@
+"0","barplot(table(symbolCheck$Match.type), col = c(""cyan"", ""coral""), border = F, axes = F, main = ""Proportion by Match Type"")"
