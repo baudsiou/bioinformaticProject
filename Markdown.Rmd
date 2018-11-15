@@ -9,8 +9,9 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r}
-# import libraries here
+Imported libaries
+
+```{r, message=FALSE}
 library(RCurl)
 ```
 
@@ -28,67 +29,91 @@ geneList = scan(file = "geneList.txt", what = "list")
 
 For all genes in the seed gene list, collect and store the following basic information:
 
-1) official gene symbol (check if the symbols are updated and approved on the HGNC
+- official gene symbol (check if the symbols are updated and approved on the HGNC
 website; report any issue/lack of data/potential misinterpretation)
-- Uniprot AC, ‘accession number’ (a.k.a. ’Uniprot entry’)
+ Uniprot AC, ‘accession number’ (a.k.a. ’Uniprot entry’)
 - protein name (the main one only, do not report the aliases)
 - Entrez Gene ID (a.k.a. ‘GeneID’)
 - very brief description of its function (keep it very short, i.e. max 20 words)
 - notes related to the above information, if any and if relevant
 
-## 1) Check official gene symbol
+This is an example of syntax to be used when performing queries to Uniprot
 
-<https://www.genenames.org/tools/multi-symbol-checker/>
+https://www.uniprot.org/uniprot/
 
-The checking output are retrieved as afile called *hgnc-symbol-check.csv*
+?query=gene_exact:BRIP1+AND+reviewed:yes+AND+organism:%22Homo%20sapiens%20(Human)%20[9606]%22
 
-```{r}
-symbolCheck = read.csv("hgnc-symbol-check.csv", header = T)[,1:5]
-print(head(symbolCheck))
-barplot(table(symbolCheck$Match.type), col = c("cyan", "coral"), border = F, axes = F, main = "Proportion by Match Type")
-```
+&columns=id,database(GeneID),comment(FUNCTION),protein%20names&format=tab
 
-We found that all the genes in our list are actually approved symbols, except for one gene. Let's replace the name of that gene in the seed list
+*query*
 
-```{r}
-geneList = symbolCheck$Approved.symbol
-geneList
-```
+Each of the following filters are applied using the AND operator
 
+- gene_exact: lists all entries for proteins encoded by gene HPSE, but excluding variations like HPSE2 or HPSE_0
+- organism: (e.g. Homo Sapiens [9606])
+- reviewed: lists just rewied entries (SwissProt DB)
 
-## How to build a query in Uniprot for programmatic access
+*columns*
 
-https://www.uniprot.org/uniprot/?query=gene_exact:BRIP1+AND+reviewed:yes+AND+organism:%22Homo%20sapiens%20(Human)%20[9606]%22&columns=id,database(GeneID),comment(FUNCTION),protein%20names&format=tab
+what follows is a comma separated set of informations we want to retrieve
 
-```{r}
-table <- read.table(file='https://www.uniprot.org/uniprot/?query=gene_exact:BRIP1+AND+reviewed:yes+AND+organism:%22Homo%20sapiens%20(Human)%20[9606]%22&columns=id,database(GeneID),comment(FUNCTION),protein%20names&format=tab', sep = '\t', header = T)
-table$OffGeneSymbol = "BRIP1"
+- id: stands for Entry (Uniprot AC)
+- database(GeneID): GeneID (Entrez Gene)
+- comment(FUNCTION): description (function)
+- protein name
 
-table <- table[c(colnames(table)[5],colnames(table)[1:4])]
-class(table)
-```
+*format*
+one of the possible formats (html | tab | xls | fasta | gff | txt | xml | rdf | list | rss)
 
 ```{r}
-queryBuilder <- function(OffGeneSymbol = "BRIP1"){
+queryBuilder <- function(OffGeneSymbol = "BECN1"){
   return(paste("https://uniprot.org/uniprot/?query=gene_exact:",OffGeneSymbol,"+AND+reviewed:yes+AND+organism:%22Homo%20sapiens%20(Human)%20[9606]%22&columns=id,database(GeneID),comment(FUNCTION),protein%20names&format=tab", sep = ""))
 }
 ```
 
+This function takes as input a gene of the seed list, and, if no error occourred downloading the data, returns as output a data frame containing all matches in Uniprot database according to how we set the query format (see chunk above).
+
+Data are cleaned a little bit (parenthesis removal in the desctription field, see comments in the code for details).
+
 ```{r}
-bigtable = data.frame()
-#colnames(bigtable) = c('OfficialGeneSymbol', 'UniprotAC', "ProteinName", "EntrezGene", "Description")
-for(i in geneList){
-  # biuld the query for gene i
-  query = queryBuilder(OffGeneSymbol = i)
-  # collect data relative to gene i in a table
-  table = read.table(file = query, sep = '\t', header = T)
-  # add a column that refers to gene i
-  table$OffGeneSymbol = i
-  # swap columns
-  table <- table[c(colnames(table)[5],colnames(table)[1:4])]
-  
-  #colnames(table) = c('OfficialGeneSymbol', 'UniprotAC', "ProteinName", "EntrezGene", "Description")
-  #rbind.data.frame(bigtable, table)
+createTable <- function(i) {
+    out <- tryCatch(
+        {
+            message(paste("Trying to download info for ..gene", i))
+            
+            query = queryBuilder(OffGeneSymbol = i)
+            # collect data relative to gene i in a table
+            table = read.table(file = query, sep = '\t', header = T)
+            # Protein names... keep only the first name (using the fact it comes before any parenthesis)
+            table$Protein.names = str_extract(table$Protein.names, regex("^[^(]+ ")) 
+            # Function remove text within parenthesis and the incipit "FUNCTION:"
+            table$Function..CC. = gsub("(\\(.([^\\)])*\\))|(FUNCTION:)|(\\{.([^\\}])*\\})", "", table$Function..CC.)
+            table$Cross.reference..GeneID. = gsub(";", "", table$Cross.reference..GeneID.)
+            table = cbind(OffGeneSymbol = i, table)
+            colnames(table) = c("OfficialGeneSymbol", "UniProtAC", "EntrezGene", "Description", "ProteinName")
+            message("OK")
+            return(table)
+            
+        },
+        error=function(cond) NULL,
+        
+        warning=function(cond) NULL,
+        
+        finally={
+    
+        }
+    )    
+    print(out)
+    return(out)
 }
+```
+
+The function in called for each entry of geneList, and all is merged into a summary for geneList.
+
+Data are stored in a csv file called "Table_1.csv"
+
+```{r}
+table =  do.call("rbind", lapply(geneList, createTable))
+write.csv(table, file = "Table_1.csv", row.names = F)
 ```
 

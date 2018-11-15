@@ -9,8 +9,9 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r}
-# import libraries here
+Imported libaries
+
+```{r, message=FALSE}
 library(RCurl)
 ```
 
@@ -36,18 +37,26 @@ website; report any issue/lack of data/potential misinterpretation)
 - very brief description of its function (keep it very short, i.e. max 20 words)
 - notes related to the above information, if any and if relevant
 
-This is an example of syntax to be used when performing queries to uniprot
+This is an example of syntax to be used when performing queries to Uniprot
 
-https://www.uniprot.org/uniprot/?query=gene_exact:BRIP1+AND+reviewed:yes+AND+organism:%22Homo%20sapiens%20(Human)%20[9606]%22&columns=id,database(GeneID),comment(FUNCTION),protein%20names&format=tab
+https://www.uniprot.org/uniprot/
+
+?query=gene_exact:BRIP1+AND+reviewed:yes+AND+organism:%22Homo%20sapiens%20(Human)%20[9606]%22
+
+&columns=id,database(GeneID),comment(FUNCTION),protein%20names&format=tab
 
 *query*
+
 Each of the following filters are applied using the AND operator
+
 - gene_exact: lists all entries for proteins encoded by gene HPSE, but excluding variations like HPSE2 or HPSE_0
 - organism: (e.g. Homo Sapiens [9606])
 - reviewed: lists just rewied entries (SwissProt DB)
 
 *columns*
+
 what follows is a comma separated set of informations we want to retrieve
+
 - id: stands for Entry (Uniprot AC)
 - database(GeneID): GeneID (Entrez Gene)
 - comment(FUNCTION): description (function)
@@ -62,7 +71,9 @@ queryBuilder <- function(OffGeneSymbol = "BECN1"){
 }
 ```
 
+This function takes as input a gene of the seed list, and, if no error occourred downloading the data, returns as output a data frame containing all matches in Uniprot database according to how we set the query format (see chunk above).
 
+Data are cleaned a little bit (parenthesis removal in the desctription field, see comments in the code for details).
 
 ```{r}
 createTable <- function(i) {
@@ -76,7 +87,7 @@ createTable <- function(i) {
             # Protein names... keep only the first name (using the fact it comes before any parenthesis)
             table$Protein.names = str_extract(table$Protein.names, regex("^[^(]+ ")) 
             # Function remove text within parenthesis and the incipit "FUNCTION:"
-            table$Function..CC. = gsub("(\\(.([^\\)])*\\))|(FUNCTION:)", "", table$Function..CC.)
+            table$Function..CC. = gsub("(\\(.([^\\)])*\\))|(FUNCTION:)|(\\{.([^\\}])*\\})", "", table$Function..CC.)
             table$Cross.reference..GeneID. = gsub(";", "", table$Cross.reference..GeneID.)
             table = cbind(OffGeneSymbol = i, table)
             colnames(table) = c("OfficialGeneSymbol", "UniProtAC", "EntrezGene", "Description", "ProteinName")
@@ -86,7 +97,7 @@ createTable <- function(i) {
         },
         error=function(cond) NULL,
         
-         warning=function(cond) NULL,
+        warning=function(cond) NULL,
         
         finally={
     
@@ -97,10 +108,12 @@ createTable <- function(i) {
 }
 ```
 
+The function in called for each entry of geneList, and all is merged into a summary for geneList.
+
+Data are stored in a csv file called "Table_1.csv"
 
 ```{r}
 table =  do.call("rbind", lapply(geneList, createTable))
-table
+write.csv(table, file = "Table_1.csv", row.names = F)
 ```
-
 

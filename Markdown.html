@@ -313,6 +313,8 @@ $(document).ready(function () {
 </div>
 
 
+<p>Imported libaries</p>
+<pre class="r"><code>library(RCurl)</code></pre>
 <div id="the-seed-genes" class="section level1">
 <h1>The seed genes</h1>
 <p>The list of seeds genes contains rheumatoid arthritis-related human-oral microbiome proteins.</p>
@@ -320,13 +322,181 @@ $(document).ready(function () {
 <pre class="r"><code>geneList = scan(file = &quot;geneList.txt&quot;, what = &quot;list&quot;)</code></pre>
 <p>For all genes in the seed gene list, collect and store the following basic information:</p>
 <ul>
-<li>official gene symbol (check if the symbols are updated and approved on the HGNC website; report any issue/lack of data/potential misinterpretation)</li>
-<li>Uniprot AC, ‘accession number’ (a.k.a. ’Uniprot entry’)</li>
+<li>official gene symbol (check if the symbols are updated and approved on the HGNC website; report any issue/lack of data/potential misinterpretation) Uniprot AC, ‘accession number’ (a.k.a. ’Uniprot entry’)</li>
 <li>protein name (the main one only, do not report the aliases)</li>
 <li>Entrez Gene ID (a.k.a. ‘GeneID’)</li>
 <li>very brief description of its function (keep it very short, i.e. max 20 words)</li>
 <li>notes related to the above information, if any and if relevant</li>
 </ul>
+<p>This is an example of syntax to be used when performing queries to Uniprot</p>
+<p><a href="https://www.uniprot.org/uniprot/" class="uri">https://www.uniprot.org/uniprot/</a></p>
+<p>?query=gene_exact:BRIP1+AND+reviewed:yes+AND+organism:%22Homo%20sapiens%20(Human)%20[9606]%22</p>
+<p>&amp;columns=id,database(GeneID),comment(FUNCTION),protein%20names&amp;format=tab</p>
+<p><em>query</em></p>
+<p>Each of the following filters are applied using the AND operator</p>
+<ul>
+<li>gene_exact: lists all entries for proteins encoded by gene HPSE, but excluding variations like HPSE2 or HPSE_0</li>
+<li>organism: (e.g. Homo Sapiens [9606])</li>
+<li>reviewed: lists just rewied entries (SwissProt DB)</li>
+</ul>
+<p><em>columns</em></p>
+<p>what follows is a comma separated set of informations we want to retrieve</p>
+<ul>
+<li>id: stands for Entry (Uniprot AC)</li>
+<li>database(GeneID): GeneID (Entrez Gene)</li>
+<li>comment(FUNCTION): description (function)</li>
+<li>protein name</li>
+</ul>
+<p><em>format</em> one of the possible formats (html | tab | xls | fasta | gff | txt | xml | rdf | list | rss)</p>
+<pre class="r"><code>queryBuilder &lt;- function(OffGeneSymbol = &quot;BECN1&quot;){
+  return(paste(&quot;https://uniprot.org/uniprot/?query=gene_exact:&quot;,OffGeneSymbol,&quot;+AND+reviewed:yes+AND+organism:%22Homo%20sapiens%20(Human)%20[9606]%22&amp;columns=id,database(GeneID),comment(FUNCTION),protein%20names&amp;format=tab&quot;, sep = &quot;&quot;))
+}</code></pre>
+<p>This function takes as input a gene of the seed list, and, if no error occourred downloading the data, returns as output a data frame containing all matches in Uniprot database according to how we set the query format (see chunk above).</p>
+<p>Data are cleaned a little bit (parenthesis removal in the desctription field, see comments in the code for details).</p>
+<pre class="r"><code>createTable &lt;- function(i) {
+    out &lt;- tryCatch(
+        {
+            message(paste(&quot;Trying to download info for ..gene&quot;, i))
+            
+            query = queryBuilder(OffGeneSymbol = i)
+            # collect data relative to gene i in a table
+            table = read.table(file = query, sep = '\t', header = T)
+            # Protein names... keep only the first name (using the fact it comes before any parenthesis)
+            table$Protein.names = str_extract(table$Protein.names, regex(&quot;^[^(]+ &quot;)) 
+            # Function remove text within parenthesis and the incipit &quot;FUNCTION:&quot;
+            table$Function..CC. = gsub(&quot;(\\(.([^\\)])*\\))|(FUNCTION:)|(\\{.([^\\}])*\\})&quot;, &quot;&quot;, table$Function..CC.)
+            table$Cross.reference..GeneID. = gsub(&quot;;&quot;, &quot;&quot;, table$Cross.reference..GeneID.)
+            table = cbind(OffGeneSymbol = i, table)
+            colnames(table) = c(&quot;OfficialGeneSymbol&quot;, &quot;UniProtAC&quot;, &quot;EntrezGene&quot;, &quot;Description&quot;, &quot;ProteinName&quot;)
+            message(&quot;OK&quot;)
+            return(table)
+            
+        },
+        error=function(cond) NULL,
+        
+        warning=function(cond) NULL,
+        
+        finally={
+    
+        }
+    )    
+    print(out)
+    return(out)
+}</code></pre>
+<p>The function in called for each entry of geneList, and all is merged into a summary for geneList.</p>
+<pre class="r"><code>table =  do.call(&quot;rbind&quot;, lapply(geneList, createTable))</code></pre>
+<pre><code>## Trying to download info for ..gene ACAP2</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene ADAP1</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene AGFG1</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene ANXA4</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene AURKC</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene BCCIP</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene BECN1</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene BDKRB2</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene BRCA2</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene CALR</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene CAV1</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene CAPZA2</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene CDC42</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene CDK1</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene CLTC</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene CUL2</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene DCLK1</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene DMPK</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene POLD1</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene EIF2AK2</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene ENAH</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene BRIP1</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene GGA2</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene GNPNAT1</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene HSF4</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene IFIT3</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene ILF3</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene ITGAV</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene KIF3A</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene KATNB1</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene LMNA</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene MAP3K8</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene MEF2D</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene MAPK3</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene MAP2K4</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene NDUFA13</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene PPP3CA</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene PTPN1</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene RABGEF1</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene RAP2A</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene RAB27A</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene RBBP4</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene SERINC3</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene SKP1</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene SORT1</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene SPI1</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene SQSTM1</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene SRF</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene STAT1</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene STAT3</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene STAT6</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene TUBA4A</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene FASLG</code></pre>
+<pre><code>## NULL</code></pre>
+<pre><code>## Trying to download info for ..gene UBE2L3</code></pre>
+<pre><code>## NULL</code></pre>
+<pre class="r"><code>print.data.frame(table[c(&quot;OfficialGeneSymbol&quot;, &quot;UniProtAC&quot;, &quot;EntrezGene&quot;, &quot;ProteinName&quot;)])</code></pre>
+<pre><code>## data frame with 0 columns and 0 rows</code></pre>
+<p>Data are stored in a csv file called “Table_1”</p>
+<pre class="r"><code>write.csv(table, file = &quot;Table_1.csv&quot;, row.names = F)</code></pre>
 </div>
 
 

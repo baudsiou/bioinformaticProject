@@ -1,8 +1,0 @@
-"0","queryBuilder <- function(OffGeneSymbol = ""BRIP1""){"
-"0","  return(paste(""https://uniprot.org/uniprot/?query=gene_exact:"",OffGeneSymbol,""+AND+reviewed:yes+AND+organism:%22Homo%20sapiens%20(Human)%20[9606]%22&columns=id,database(GeneID),comment(FUNCTION),protein%20names&format=tab"", sep = """"))"
-"0","}"
-"0","print(queryBuilder())"
-"1","[1]"
-"1"," ""https://uniprot.org/uniprot/?query=gene_exact:BRIP1+AND+reviewed:yes+AND+organism:%22Homo%20sapiens%20(Human)%20[9606]%22&columns=id,database(GeneID),comment(FUNCTION),protein%20names&format=tab"""
-"1","
-"
