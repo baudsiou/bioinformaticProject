@@ -9,18 +9,11 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-Imported libaries
+# The Seed List 
 
-```{r, message=FALSE}
-library(RCurl)
-```
+The list of seeds genes contains 54 rheumatoid arthritis-related human-oral microbiome proteins.
 
-
-# The seed genes 
-
-The list of seeds genes contains rheumatoid arthritis-related human-oral microbiome proteins.
-
-They are stored in a file *geneList.txt*
+They are stored in a file `geneList.txt`
 
 ```{r}
 geneList = scan(file = "geneList.txt", what = "list")
@@ -39,31 +32,27 @@ website; report any issue/lack of data/potential misinterpretation)
 
 This is an example of syntax to be used when performing queries to Uniprot
 
-https://www.uniprot.org/uniprot/
+<https://www.uniprot.org/uniprot/?query=gene_exact:BRIP1+AND+reviewed:yes+AND+organism:%22Homo%20sapiens%20(Human)%20[9606]%22&columns=id,database(GeneID),comment(FUNCTION),protein%20names&format=tab>
 
-?query=gene_exact:BRIP1+AND+reviewed:yes+AND+organism:%22Homo%20sapiens%20(Human)%20[9606]%22
-
-&columns=id,database(GeneID),comment(FUNCTION),protein%20names&format=tab
-
-*query*
+## *query*
 
 Each of the following filters are applied using the AND operator
 
-- gene_exact: lists all entries for proteins encoded by gene HPSE, but excluding variations like HPSE2 or HPSE_0
-- organism: (e.g. Homo Sapiens [9606])
-- reviewed: lists just rewied entries (SwissProt DB)
+- `gene_exact`: lists all entries for proteins encoded by gene HPSE, but excluding variations like HPSE2 or HPSE_0
+- `organism`: (e.g. Homo Sapiens [9606])
+- `reviewed`: lists just rewied entries (SwissProt DB)
 
-*columns*
+## *columns*
 
 what follows is a comma separated set of informations we want to retrieve
 
-- id: stands for Entry (Uniprot AC)
-- database(GeneID): GeneID (Entrez Gene)
-- comment(FUNCTION): description (function)
-- protein name
+- `id`: stands for Entry (Uniprot AC)
+- `database(GeneID)`: GeneID (Entrez Gene)
+- `comment(FUNCTION)`: description (function)
+- `protein name`
 
-*format*
-one of the possible formats (html | tab | xls | fasta | gff | txt | xml | rdf | list | rss)
+## *format*
+one of the possible formats `html | tab | xls | fasta | gff | txt | xml | rdf | list | rss`
 
 ```{r}
 queryBuilder <- function(OffGeneSymbol = "BECN1"){
@@ -103,16 +92,16 @@ createTable <- function(i) {
     
         }
     )    
-    print(out)
+    
     return(out)
 }
 ```
 
 The function in called for each entry of geneList, and all is merged into a summary for geneList.
 
-Data are stored in a csv file called "Table_1.csv"
+Data are stored in a csv file called `Table_1.csv`
 
-```{r}
+```{r, message=FALSE}
 table =  do.call("rbind", lapply(geneList, createTable))
 write.csv(table, file = "Table_1.csv", row.names = F)
 ```
