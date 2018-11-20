@@ -3,11 +3,20 @@ title: "Data Retrivial"
 author: "Mattia Podio"
 date: "14 novembre 2018"
 output: html_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
+# Libraries
+
+```{r, message=F}
+library(stringr)
+```
+
 
 # The Seed List 
 
@@ -75,18 +84,22 @@ createTable <- function(i) {
             table = read.table(file = query, sep = '\t', header = T)
             # Protein names... keep only the first name (using the fact it comes before any parenthesis)
             table$Protein.names = str_extract(table$Protein.names, regex("^[^(]+ ")) 
+            
             # Function remove text within parenthesis and the incipit "FUNCTION:"
             table$Function..CC. = gsub("(\\(.([^\\)])*\\))|(FUNCTION:)|(\\{.([^\\}])*\\})", "", table$Function..CC.)
             table$Cross.reference..GeneID. = gsub(";", "", table$Cross.reference..GeneID.)
             table = cbind(OffGeneSymbol = i, table)
             colnames(table) = c("OfficialGeneSymbol", "UniProtAC", "EntrezGene", "Description", "ProteinName")
-            message("OK")
-            return(table)
+            table
             
         },
-        error=function(cond) NULL,
+        error=function(cond) {
+          cat(paste("error", cond))
+        },
         
-        warning=function(cond) NULL,
+        warning=function(cond) {
+          cat(paste("warning", cond))
+        },
         
         finally={
     
@@ -99,10 +112,12 @@ createTable <- function(i) {
 
 The function in called for each entry of geneList, and all is merged into a summary for geneList.
 
-Data are stored in a csv file called `Table_1.csv`
+Data are stored in a csv file called `Table_1.csv`. There are 4 proteins out of 54 that are not correctly retrieved, as we can check out from the warning returned by the `createTable()` function.
 
 ```{r, message=FALSE}
 table =  do.call("rbind", lapply(geneList, createTable))
+table[table == ''] <- NA
 write.csv(table, file = "Table_1.csv", row.names = F)
+View(table)
 ```
 

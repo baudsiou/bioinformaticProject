@@ -313,6 +313,10 @@ $(document).ready(function () {
 </div>
 
 
+<div id="libraries" class="section level1">
+<h1>Libraries</h1>
+<pre class="r"><code>library(stringr)</code></pre>
+</div>
 <div id="the-seed-list" class="section level1">
 <h1>The Seed List</h1>
 <p>The list of seeds genes contains 54 rheumatoid arthritis-related human-oral microbiome proteins.</p>
@@ -365,18 +369,22 @@ $(document).ready(function () {
             table = read.table(file = query, sep = '\t', header = T)
             # Protein names... keep only the first name (using the fact it comes before any parenthesis)
             table$Protein.names = str_extract(table$Protein.names, regex(&quot;^[^(]+ &quot;)) 
+            
             # Function remove text within parenthesis and the incipit &quot;FUNCTION:&quot;
             table$Function..CC. = gsub(&quot;(\\(.([^\\)])*\\))|(FUNCTION:)|(\\{.([^\\}])*\\})&quot;, &quot;&quot;, table$Function..CC.)
             table$Cross.reference..GeneID. = gsub(&quot;;&quot;, &quot;&quot;, table$Cross.reference..GeneID.)
             table = cbind(OffGeneSymbol = i, table)
             colnames(table) = c(&quot;OfficialGeneSymbol&quot;, &quot;UniProtAC&quot;, &quot;EntrezGene&quot;, &quot;Description&quot;, &quot;ProteinName&quot;)
-            message(&quot;OK&quot;)
-            return(table)
+            table
             
         },
-        error=function(cond) NULL,
+        error=function(cond) {
+          cat(paste(&quot;error&quot;, cond))
+        },
         
-        warning=function(cond) NULL,
+        warning=function(cond) {
+          cat(paste(&quot;warning&quot;, cond))
+        },
         
         finally={
     
@@ -386,9 +394,15 @@ $(document).ready(function () {
     return(out)
 }</code></pre>
 <p>The function in called for each entry of geneList, and all is merged into a summary for geneList.</p>
-<p>Data are stored in a csv file called <code>Table_1.csv</code></p>
-<pre class="r"><code>table =  do.call(&quot;rbind&quot;, lapply(geneList, createTable))
-write.csv(table, file = &quot;Table_1.csv&quot;, row.names = F)</code></pre>
+<p>Data are stored in a csv file called <code>Table_1.csv</code>. There are 4 proteins out of 54 that are not correctly retrieved, as we can check out from the warning returned by the <code>createTable()</code> function.</p>
+<pre class="r"><code>table =  do.call(&quot;rbind&quot;, lapply(geneList, createTable))</code></pre>
+<pre><code>## warning simpleWarning in read.table(file = query, sep = &quot;\t&quot;, header = T): incomplete final line found by readTableHeader on 'https://uniprot.org/uniprot/?query=gene_exact:POLD1+AND+reviewed:yes+AND+organism:%22Homo%20sapiens%20(Human)%20[9606]%22&amp;columns=id,database(GeneID),comment(FUNCTION),protein%20names&amp;format=tab'
+## warning simpleWarning in read.table(file = query, sep = &quot;\t&quot;, header = T): incomplete final line found by readTableHeader on 'https://uniprot.org/uniprot/?query=gene_exact:ILF3+AND+reviewed:yes+AND+organism:%22Homo%20sapiens%20(Human)%20[9606]%22&amp;columns=id,database(GeneID),comment(FUNCTION),protein%20names&amp;format=tab'
+## warning simpleWarning in read.table(file = query, sep = &quot;\t&quot;, header = T): incomplete final line found by readTableHeader on 'https://uniprot.org/uniprot/?query=gene_exact:ITGAV+AND+reviewed:yes+AND+organism:%22Homo%20sapiens%20(Human)%20[9606]%22&amp;columns=id,database(GeneID),comment(FUNCTION),protein%20names&amp;format=tab'
+## warning simpleWarning in read.table(file = query, sep = &quot;\t&quot;, header = T): incomplete final line found by readTableHeader on 'https://uniprot.org/uniprot/?query=gene_exact:SRF+AND+reviewed:yes+AND+organism:%22Homo%20sapiens%20(Human)%20[9606]%22&amp;columns=id,database(GeneID),comment(FUNCTION),protein%20names&amp;format=tab'</code></pre>
+<pre class="r"><code>table[table == ''] &lt;- NA
+write.csv(table, file = &quot;Table_1.csv&quot;, row.names = F)
+View(table)</code></pre>
 </div>
 </div>
 
