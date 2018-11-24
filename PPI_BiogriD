@@ -28,6 +28,8 @@ providers(psicquic)
 
 #Choose the ID for Homo Sapiens
 speciesIDs()
+idMapper = IDMapper("9606")
+
 # so our species id is 9606
 
 ?interactions
@@ -35,9 +37,8 @@ speciesIDs()
 #Given a gene it returns a list of the binary PPI 
 
 interact = function(lis){
-  print("Retrieving PPI from BiogriD")
-  idMapper = IDMapper("9606")
   for (i in length(lis)){
+    message(paste("Retrieving PPI from BiogriD for gene",lis[i]))
     tbl = interactions(psicquic, id=lis[i], species="9606",provider="BioGrid")
     table.inf = addGeneInfo(idMapper,tbl)
     #Remove all duplicates
@@ -51,6 +52,7 @@ interact = function(lis){
   
 }
 
-#Return all the interactions between each gene with a given geneList
+#Return all the interactions between each gene with a given geneList  (takes some time)
 
 interactions = mapply(interact,geneList)
+interactions$ACAP2
