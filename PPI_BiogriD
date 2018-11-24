@@ -35,10 +35,25 @@ interact = function(lis){
     ins = unique(c(unique(table.inf$A.name),unique(table.inf$B.name)))
     #Remove the gene itself from the interactors
     ins = ins[ins!=lis[i]]
-    return(ins)
+    d = data.frame(ins)
+    colnames(d)=lis[i]
+    return(d)
     
     
   }
+  
+  
+}
+
+
+
+
+
+
+
+
+interact("ADAP1")
+
   
   
 }
