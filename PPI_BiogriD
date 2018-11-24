@@ -1,0 +1,44 @@
+
+#BioCONDUCTOR--PSICQUIC
+
+
+#Run for downloading the package "PSICQUIC"
+if (!requireNamespace("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+BiocManager::install("PSICQUIC", version = "3.8")
+
+
+library(PSICQUIC)
+library(dplyr)
+
+
+#Check the package providers (for building queries)
+psicquic <- PSICQUIC()
+providers(psicquic)
+
+
+#Choose the ID for Homo Sapiens
+speciesIDs()
+# so our species id is 9606
+
+?interactions
+
+#Given a gene it returns a list of the binary PPI 
+
+interact = function(lis){
+  print("Retrieving PPI from BiogriD")
+  idMapper = IDMapper("9606")
+  for (i in length(lis)){
+    tbl = interactions(psicquic, id=lis[i], species="9606",provider="BioGrid")
+    table.inf = addGeneInfo(idMapper,tbl)
+    #Remove all duplicates
+    ins = unique(c(unique(table.inf$A.name),unique(table.inf$B.name)))
+    #Remove the gene itself from the interactors
+    ins = ins[ins!=lis[i]]
+    return(ins)
+    
+    
+  }
+  
+  
+}
