@@ -1,6 +1,15 @@
 
 #BioCONDUCTOR--PSICQUIC
 
+--------------------------------------------------
+#Import the libraries
+library(stringr)
+
+
+#Read the geneList
+geneList = scan(file = "geneList.txt", what = "list")
+
+---------------------------------------------------
 
 #Run for downloading the package "PSICQUIC"
 if (!requireNamespace("BiocManager", quietly = TRUE))
@@ -35,25 +44,13 @@ interact = function(lis){
     ins = unique(c(unique(table.inf$A.name),unique(table.inf$B.name)))
     #Remove the gene itself from the interactors
     ins = ins[ins!=lis[i]]
-    d = data.frame(ins)
-    colnames(d)=lis[i]
-    return(d)
+    return(ins)
     
     
   }
   
-  
 }
 
+#Return all the interactions between each gene with a given geneList
 
-
-
-
-
-
-
-interact("ADAP1")
-
-  
-  
-}
+interactions = mapply(interact,geneList)
